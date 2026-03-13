@@ -36,6 +36,14 @@ inputs:
     description: 'Job name (defaults to github.job)'
     required: false
     default: ''
+  commit_sha:
+    description: 'Git commit SHA (defaults to github.sha)'
+    required: false
+    default: ''
+  git_branch:
+    description: 'Git branch name (defaults to github.head_ref or github.ref_name)'
+    required: false
+    default: ''
   pr_id:
     description: 'Pull request number (auto-detected from PR events if not set)'
     required: false
@@ -77,6 +85,23 @@ runs:
           JOB_NAME="${{ github.job }}"
         fi
         echo "job_name=$JOB_NAME" >> "$GITHUB_OUTPUT"
+
+        # Resolve commit_sha
+        COMMIT_SHA="${{ inputs.commit_sha }}"
+        if [ -z "$COMMIT_SHA" ]; then
+          COMMIT_SHA="${{ github.sha }}"
+        fi
+        echo "commit_sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
+
+        # Resolve git_branch
+        GIT_BRANCH="${{ inputs.git_branch }}"
+        if [ -z "$GIT_BRANCH" ]; then
+          GIT_BRANCH="${{ github.head_ref }}"
+        fi
+        if [ -z "$GIT_BRANCH" ]; then
+          GIT_BRANCH="${{ github.ref_name }}"
+        fi
+        echo "git_branch=$GIT_BRANCH" >> "$GITHUB_OUTPUT"
 
         # Resolve pr_id
         PR_ID="${{ inputs.pr_id }}"
@@ -130,6 +155,8 @@ runs:
           -F "git_project_name=${{ steps.resolve.outputs.project_name }}"
           -F "workflow_name=${{ steps.resolve.outputs.workflow_name }}"
           -F "job_name=${{ steps.resolve.outputs.job_name }}"
+          -F "commit_sha=${{ steps.resolve.outputs.commit_sha }}"
+          -F "git_branch=${{ steps.resolve.outputs.git_branch }}"
         )
 
         # Conditionally add pr_id

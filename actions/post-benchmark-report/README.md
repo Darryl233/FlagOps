@@ -40,7 +40,7 @@ steps:
     uses: flagos-ai/FlagOps/actions/post-benchmark-report@main
     with:
       backend_url: 'http://10.1.4.167:30180/flagcicd-backend/metrics/'
-      results_file: 'tests/functional_tests/benchmark/qwen3/test_results/tp2_pp2/metrics.json'
+      results_file: 'benchmark_metrics.json'
 ```
 
 `workflow_name`, `job_name`, `pr_id`, and `git_project_name` are auto-detected from the GitHub context.
