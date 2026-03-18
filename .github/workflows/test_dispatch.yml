@@ -89,6 +89,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install runner dependencies
+        shell: bash
         run: |
           if [ -n "${{ matrix.conda_env }}" ]; then
             source flagos-user-tests/tools/activate_conda.sh ${{ matrix.conda_env }}
@@ -96,6 +97,7 @@ jobs:
           pip install pyyaml
 
       - name: Run user tests
+        shell: bash
         run: |
           if [ -n "${{ matrix.conda_env }}" ]; then
             source flagos-user-tests/tools/activate_conda.sh ${{ matrix.conda_env }}
