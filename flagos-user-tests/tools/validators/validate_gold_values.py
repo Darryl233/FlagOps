@@ -4,8 +4,9 @@
 Checks:
 - Valid JSON syntax
 - Expected structure: keys map to objects with "values" arrays
-- All values are numeric
 - At least one value is present
+- Numeric entries (default): all values are int/float
+- Text entries (type: "text"): all values are strings, "pattern" field is present
 """
 
 import argparse
@@ -48,11 +49,25 @@ def validate_gold_values_file(filepath: Path) -> list[str]:
             errors.append(f"{filepath}: Key '{key}'.values is empty")
             continue
 
-        for i, v in enumerate(values):
-            if not isinstance(v, (int, float)):
-                errors.append(
-                    f"{filepath}: Key '{key}'.values[{i}] is not numeric: {v!r}"
-                )
+        entry_type = value.get("type", "numeric")
+
+        if entry_type == "text":
+            # Text entries require a 'pattern' field for extraction
+            if "pattern" not in value:
+                errors.append(f"{filepath}: Key '{key}' has type 'text' but missing 'pattern' field")
+            for i, v in enumerate(values):
+                if not isinstance(v, str):
+                    errors.append(
+                        f"{filepath}: Key '{key}'.values[{i}] is not a string: {v!r}"
+                    )
+        elif entry_type == "numeric":
+            for i, v in enumerate(values):
+                if not isinstance(v, (int, float)):
+                    errors.append(
+                        f"{filepath}: Key '{key}'.values[{i}] is not numeric: {v!r}"
+                    )
+        else:
+            errors.append(f"{filepath}: Key '{key}' has unknown type: {entry_type!r}")
 
     return errors
 

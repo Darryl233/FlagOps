@@ -451,6 +451,30 @@ def resolve_container_options(resources: dict, resource_map_path: Path) -> dict:
     }
 
 
+def resolve_container_init(
+    repo: str, task: str, resources: dict, resource_map_path: Path
+) -> str:
+    """Resolve container init command for the given platform and repo/task.
+
+    Lookup: platform -> container_init -> "<repo>/<task>" | "<repo>" | "default"
+    Returns "" if no init command is configured.
+    """
+    resource_map = _load_resource_map(resource_map_path)
+    platform = resources.get("platform", "")
+    pcfg = _get_platform_config(resource_map, platform)
+    init_cmds = pcfg.get("container_init", {})
+    if not init_cmds:
+        return ""
+
+    key = f"{repo}/{task}" if task else repo
+    cmd = init_cmds.get(key, "")
+    if not cmd and repo:
+        cmd = init_cmds.get(repo, "")
+    if not cmd:
+        cmd = init_cmds.get("default", "")
+    return cmd
+
+
 def list_test_resources(
     root: Path, repo: str | None = None,
     task: str | None = None, model: str | None = None
@@ -458,7 +482,8 @@ def list_test_resources(
     """List test cases with their resource requirements, runner labels, and container config.
 
     Returns a list of dicts with keys:
-      case_path, resources, runner_labels, container_image, container_options, container_volumes
+      case_path, resources, runner_labels, container_image, container_init,
+      container_options, container_volumes
     """
     cases = discover_test_cases(root, repo, task, model)
     resource_map_path = root / "resource_map.yaml"
@@ -473,12 +498,16 @@ def list_test_resources(
         container_image = resolve_container_image(
             meta.get("repo", ""), meta.get("task", ""), resources, resource_map_path
         )
+        container_init = resolve_container_init(
+            meta.get("repo", ""), meta.get("task", ""), resources, resource_map_path
+        )
         container_opts = resolve_container_options(resources, resource_map_path)
         result.append({
             "case_path": str(case_path),
             "resources": resources,
             "runner_labels": runner_labels,
             "container_image": container_image,
+            "container_init": container_init,
             **container_opts,
         })
 
