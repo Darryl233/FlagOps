@@ -68,11 +68,24 @@ RUN_ID="local-$$"
 
 DATA_PAYLOAD=$(jq -n \
   --arg repository_name "$REPO_NAME" \
+  --arg workflow_id "$WORKFLOW_ID" \
+  --arg commit_id "$COMMIT_ID" \
+  --arg run_id "$RUN_ID" \
+  --argjson header_config "$HEADER_CONFIG" \
   --slurpfile report "$REPORT_PATH" \
   '{
-    items: [ $report[0][] | . + {
-      repository_name: $repository_name
-    } ]
+    items: [ $report[0] | to_entries[] | . as $entry |
+      ([ $header_config | to_entries[] | .value.field as $f |
+        if .key == 0 then {($f): $entry.key}
+        else {($f): $entry.value[$f]}
+        end
+      ] | add) + {
+        commit_id: $commit_id,
+        repository_name: $repository_name,
+        workflow_id: $workflow_id,
+        run_id: $run_id
+      }
+    ]
   }')
 
 echo "URL: ${BACKEND_URL}/flagcicd-backend/list/data/${LIST_CODE}"

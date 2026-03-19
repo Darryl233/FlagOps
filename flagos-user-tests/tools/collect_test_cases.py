@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """Collect all test cases and output a JSON report for post-benchmark-report action.
 
-Output format:
-    [
-      {
-        "case_id": "tests/flagscale/inference/qwen3/demo_0_6b/demo_0_6b.yaml",
+Output format (object-of-objects, keyed by case_id):
+    {
+      "tests/flagscale/inference/qwen3/demo_0_6b/demo_0_6b.yaml": {
         "case_name": "flagscale-inference-qwen3-demo_0_6b",
         "repo": "flagscale",
         "updated_at": "2026-03-18T15:02:29+08:00"
       },
       ...
-    ]
+    }
 
 Usage:
     python tools/collect_test_cases.py --root . --output report.json
@@ -54,10 +53,15 @@ def make_case_id(meta: dict) -> str:
     return "-".join(p for p in parts if p)
 
 
-def collect_test_cases(root: Path) -> list:
-    """Discover all test cases and return report list."""
+def collect_test_cases(root: Path) -> dict:
+    """Discover all test cases and return report dict keyed by case_id.
+
+    The post-benchmark-report action expects an object-of-objects format where:
+    - Each key maps to header_config[0].field (case_id)
+    - Each value is an object with fields matching header_config[1+]
+    """
     tests_dir = root / "tests"
-    report = []
+    report = {}
 
     for yaml_path in sorted(tests_dir.rglob("*.yaml")):
         if yaml_path.name.startswith("_") or yaml_path.name == "data.yaml":
@@ -70,12 +74,12 @@ def collect_test_cases(root: Path) -> list:
                 continue
 
             meta = data["meta"]
-            report.append({
-                "case_id": str(yaml_path.relative_to(root)),
+            case_id = str(yaml_path.relative_to(root))
+            report[case_id] = {
                 "case_name": make_case_id(meta),
                 "repo": meta.get("repo", "unknown"),
                 "updated_at": get_file_updated_time(yaml_path),
-            })
+            }
         except (yaml.YAMLError, KeyError):
             continue
 
