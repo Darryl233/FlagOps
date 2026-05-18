@@ -18,6 +18,7 @@ A reusable GitHub Action that uploads a pytest JSON report to a backend HTTP ser
 | `job_name` | no | `${{ github.job }}` | Job name |
 | `run_id` | no | `${{ github.run_id }}` | GitHub Actions run ID |
 | `pr_id` | no | auto-detected | PR number (auto-detected from PR events) |
+| `runner_set_name` | no | `""` | Runner set name |
 | `fail_on_error` | no | `true` | Whether to fail the step on upload error |
 
 ## Outputs
