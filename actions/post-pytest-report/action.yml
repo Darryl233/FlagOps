@@ -47,6 +47,10 @@ inputs:
     description: 'Pull request number (auto-detected from PR events if not set)'
     required: false
     default: ''
+  runner_set_name:
+    description: 'Runner set name (optional)'
+    required: false
+    default: ''
   fail_on_error:
     description: 'Whether to fail the step on upload error'
     required: false
@@ -99,6 +103,10 @@ runs:
         fi
         echo "pr_id=$PR_ID" >> "$GITHUB_OUTPUT"
 
+        # Resolve runner_name from runner environment
+        RUNNER_NAME="${{ runner.name }}"
+        echo "runner_name=$RUNNER_NAME" >> "$GITHUB_OUTPUT"
+
         # Validate user_id is not empty
         if [ -z "${{ inputs.user_id }}" ]; then
           echo "::error::user_id input is required and must not be empty"
@@ -143,6 +151,15 @@ runs:
         PR_ID="${{ steps.resolve.outputs.pr_id }}"
         if [ -n "$PR_ID" ]; then
           CURL_ARGS+=(-F "pr_id=$PR_ID")
+        fi
+
+        # Add runner_name
+        CURL_ARGS+=(-F "runner_name=${{ steps.resolve.outputs.runner_name }}")
+
+        # Conditionally add runner_set_name
+        RUNNER_SET_NAME="${{ inputs.runner_set_name }}"
+        if [ -n "$RUNNER_SET_NAME" ]; then
+          CURL_ARGS+=(-F "runner_set_name=$RUNNER_SET_NAME")
         fi
 
         # Add run_id
